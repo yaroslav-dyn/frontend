@@ -31,6 +31,7 @@ export async function tokenBalance(
   tokenAddress: string,
   userAddress: string,
   sorobanContext: SorobanContextType,
+  initiator?: string
 ) {
   const user = accountToScVal(userAddress);
 
@@ -43,7 +44,8 @@ export async function tokenBalance(
       args: [user],
       sorobanContext,
     });
-
+    console.log("🚀 ~ tokenBalance:", tokenAddress, scValToJs(tokenBalance as xdr.ScVal) as BigNumber, initiator)
+    
     return scValToJs(tokenBalance as xdr.ScVal) as BigNumber;
   } catch (error) {
     // console.log("Token address doesnt exist", error);
@@ -86,6 +88,7 @@ export async function tokenBalances(
   sorobanContext: SorobanContextType,
   account: AccountResponse | undefined,
   formatted?: boolean,
+  initiator?: string
 ): Promise<tokenBalancesType | undefined> {
   if (!tokens || !sorobanContext) return;
 
@@ -103,7 +106,7 @@ export async function tokenBalances(
               (b: any) => b?.asset_issuer === token.issuer && b?.asset_code === token.code,
             )?.balance ?? null;
         } else {
-          const balanceResponse = await tokenBalance(token.contract, userAddress, sorobanContext);
+          const balanceResponse = await tokenBalance(token.contract, userAddress, sorobanContext, initiator);
           if (!balanceResponse) return notFoundReturn(token);
 
           decimalsResponse = await tokenDecimals(token.contract, sorobanContext);

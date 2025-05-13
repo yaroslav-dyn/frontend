@@ -5,7 +5,7 @@ import { useAllTokens } from './tokens/useAllTokens';
 
 const useGetLpTokens = () => {
   const sorobanContext = useSorobanReact();
-  const { tokensAsMap } = useAllTokens();
+  const { tokensAsMap } = useAllTokens('frontend/src/hooks/useGetLpTokens.ts');
 
   const { data, isLoading, error, mutate } = useSWRImmutable(
     ['lp-tokens', sorobanContext, tokensAsMap],

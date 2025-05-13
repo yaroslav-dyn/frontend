@@ -71,11 +71,12 @@ export const getCurrencyBalance = async (
   sorobanContext: SorobanContextType,
   account: AccountResponse,
 ) => {
-  if (!sorobanContext.address) return '0';
+  if (!tokenBalancesResponse || !sorobanContext.address) return '0';
 
   const findInBalances = tokenBalancesResponse?.balances.find(
     (token) => token.contract === currency.contract,
   );
+
 
   //First find if balance is already in the "my balances" list
   if (findInBalances) {
@@ -93,7 +94,7 @@ export const getCurrencyBalance = async (
     return currencyBalance;
   } else {
     //Otherwise, we can fetch the balance with contract call
-    tokenBalance(currency.contract, sorobanContext.address, sorobanContext).then((resp) => {
+    tokenBalance(currency.contract, sorobanContext.address, sorobanContext, 'getCurrencyBalance').then((resp) => {
       return formatTokenAmount(resp as BigNumber);
     });
   }
@@ -120,7 +121,7 @@ export function CurrencyRow({
 
   const { address } = sorobanContext;
 
-  const { tokenBalancesResponse } = useGetMyBalances();
+  const { tokenBalancesResponse } = useGetMyBalances('frontend/src/components/SearchModal/CurrencyList/index.tsx');
 
   const { account } = useHorizonLoadAccount();
 

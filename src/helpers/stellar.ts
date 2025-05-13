@@ -25,7 +25,7 @@ export const requiresTrustline = async (
   if (!sorobanContext.address || !asset) return false
   const {horizonServer: serverHorizon} = sorobanContext
   const account = await serverHorizon?.loadAccount(sorobanContext.address)
-  const tokenName = await getTokenName(asset.contract, sorobanContext);
+  const tokenName = await getTokenName(asset.contract, sorobanContext, 'frontend/src/helpers/stellar.tsx');
   if (!account) return true;
 
   if(!tokenName && (asset.code && asset.issuer)) {

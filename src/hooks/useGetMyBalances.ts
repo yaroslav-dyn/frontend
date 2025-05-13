@@ -17,15 +17,15 @@ interface FetchBalancesProps {
   account: AccountResponse | undefined;
 }
 
-const fetchBalances = async ({ address, tokens, sorobanContext, account }: FetchBalancesProps) => {
+const fetchBalances = async ({ address, tokens, sorobanContext, account }: FetchBalancesProps, initiator?: string) => {
   if (!address || !tokens || !sorobanContext || !account) return null;
-
-  const response = await tokenBalances(address, tokens, sorobanContext, account, true);
-
+  
+  const response = await tokenBalances(address, tokens, sorobanContext, account, true, initiator +  '+/+' + 'frontend/src/hooks/useGetMyBalances.ts');
+  console.log("🚀 ~ useGetMyBalances ~ make request:", response)
   return response;
 };
 
-function calculateAvailableBalance(
+export function calculateAvailableBalance(
   balance?: string | number | BigNumber | null,
   networkFees?: string | number | BigNumber | null,
   subentryCount?: number,
@@ -38,11 +38,11 @@ function calculateAvailableBalance(
   return BigNumber.max(new BigNumber(0), baseBalance.minus(adjustment)).decimalPlaces(7);
 }
 
-const useGetMyBalances = () => {
+const useGetMyBalances = (initiator?: string) => {
   const sorobanContext = useSorobanReact();
 
   const { address } = sorobanContext;
-  const { tokens, isLoading: isLoadingTokens } = useAllTokens();
+  const { tokens, isLoading: isLoadingTokens } = useAllTokens(initiator + '/' + 'useGetMyBalances');
   const { subentryCount, nativeBalance, isLoading: isSubentryLoading } = useGetSubentryCount();
 
   const { account, mutate: refetchAccount } = useHorizonLoadAccount();
@@ -57,8 +57,10 @@ const useGetMyBalances = () => {
       ? ['balance', address, tokens, sorobanContext, account, tokens.length]
       : null,
     ([key, address, tokens, sorobanContext, account]) =>
-      fetchBalances({ address, tokens, sorobanContext, account }),
+      fetchBalances({ address, tokens, sorobanContext, account }, initiator),
   );
+
+  // console.log("🚀 ~ useGetMyBalances ~ data:", data, initiator)
 
   const availableNativeBalance = useCallback(
     (networkFees?: string | number | BigNumber | null) =>

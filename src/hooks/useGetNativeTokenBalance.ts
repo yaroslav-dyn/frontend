@@ -27,7 +27,7 @@ const fetchBalance = async ({ sorobanContext, address }: FetchBalanceProps) => {
     return { data: 0, validAccount: false };
   }
 
-  const balance = await tokenBalance(networkNativeToken.address, address, sorobanContext);
+  const balance = await tokenBalance(networkNativeToken.address, address, sorobanContext, 'frontend/src/hooks/useGetNativeTokenBalance.ts');
 
   if (balance === null) {
     throw new Error('Failed to fetch balance');

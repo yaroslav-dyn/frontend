@@ -19,6 +19,8 @@ const fetchNetworkFees = async (
   sorobanContext: SorobanContextType,
 ) => {
   if (!trade || !sorobanContext) return 0;
+  console.log('make calculateSwapFees');
+  
   const fees = await calculateSwapFees(sorobanContext, trade);
   return fees ? Number(fees) / 10 ** 7 : 0;
 };

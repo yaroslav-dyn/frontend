@@ -29,7 +29,7 @@ const PageWrapper = styled(Paper)`
 `;
 
 export function Balances() {
-  const { sorobanContext, refetch } = useGetMyBalances();
+  const { sorobanContext, refetch } = useGetMyBalances('frontend/src/components/Balances.tsx');
 
   const isMainnet = sorobanContext.activeNetwork === WalletNetwork.PUBLIC;
 

@@ -39,7 +39,7 @@ const useLiquidityValidations = ({
 
   const { data } = useGetNativeTokenBalance();
 
-  const { tokenBalancesResponse } = useGetMyBalances();
+  const { tokenBalancesResponse } = useGetMyBalances('frontend/src/hooks/useLiquidityValidations.ts');
 
   const myCurrencyABalance =
     tokenBalancesResponse?.balances.find((token) => token.contract === currencyIdA)?.balance ?? '0';

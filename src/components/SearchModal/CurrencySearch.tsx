@@ -79,6 +79,7 @@ export function CurrencySearch({
   const sorobanContext = useSorobanReact();
   const theme = useTheme();
 
+
   const [tokenLoaderTimerElapsed, setTokenLoaderTimerElapsed] = useState(false);
 
   // refs for fixed size lists
@@ -87,8 +88,8 @@ export function CurrencySearch({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const debouncedQuery = useDebounce(searchQuery, 200);
   const isAddressSearch = isAddress(debouncedQuery);
-  const { token: searchToken, needsWrapping, isLoading: isLoadingToken, tokenIsSafe } = useToken(debouncedQuery);
-  const { tokensAsMap: allTokens } = useAllTokens();
+  const { token: searchToken, needsWrapping, isLoading: isLoadingToken, tokenIsSafe } = useToken(debouncedQuery, 'frontend/src/components/SearchModal/CurrencySearch.tsx');
+  const { tokensAsMap: allTokens } = useAllTokens('frontend/src/components/SearchModal/CurrencySearch.tsx');
 
   const [showUserAddedTokenModal, setShowUserAddedTokenModal] = useState<boolean>(false);
   const [showUnsafeTokenModal, setShowUnsafeTokenModal] = useState<boolean>(false);
@@ -105,9 +106,9 @@ export function CurrencySearch({
   //   }
   // }, [isAddressSearch])
 
-  const { tokenBalancesResponse, isLoading } = useGetMyBalances();
+  const { tokenBalancesResponse, isLoading } = useGetMyBalances('frontend/src/components/SearchModal/CurrencySearch.tsx');
 
-  const { tokensAsMap: defaultTokens } = useAllTokens();
+  const { tokensAsMap: defaultTokens } = useAllTokens('frontend/src/components/SearchModal/CurrencySearch.tsx');
 
   const filteredTokens: TokenType[] = useMemo(() => {
     const getTokensSortedByBalance = () => {
@@ -137,7 +138,7 @@ export function CurrencySearch({
   }
 
   const handleConfirmAddUserToken = () => {
-    if (!searchToken) return;
+    if (!searchToken || !searchToken.code) return;
     addUserToken(searchToken, sorobanContext);
     onCurrencySelect(searchToken);
   };
@@ -312,3 +313,4 @@ export function CurrencySearch({
     </>
   );
 }
+

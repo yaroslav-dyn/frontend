@@ -34,10 +34,10 @@ const useSwapMainButton = ({
   const { Settings } = useContext(AppContext);
   const { isAggregatorState: aggregatorEnabled } = Settings;
   const { data } = useGetNativeTokenBalance();
-  const { availableNativeBalance } = useGetMyBalances();
+  const { availableNativeBalance } = useGetMyBalances('frontend/src/hooks/useSwapMainButton.ts*1');
 
   const { address, connect } = sorobanContext;
-  const userBalances = useGetMyBalances();
+  const userBalances = useGetMyBalances('frontend/src/hooks/useSwapMainButton.ts*2');
 
   const getSwapValues = () => {
     const currencyA: TokenType = currencies[Field.INPUT];

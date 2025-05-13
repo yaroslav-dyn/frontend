@@ -126,7 +126,7 @@ function BalancesTableHead(props: BalancesTableProps) {
 
 export default function BalancesTable(props: any) {
   const { nativeToken } = props;
-  const { tokens, tokenBalancesResponse } = useGetMyBalances();
+  const { tokens, tokenBalancesResponse } = useGetMyBalances('frontend/src/components/BalancesTable/BalancesTable.tsx');
   const rows =
     tokenBalancesResponse?.balances?.map((x) => ({
       ...x,

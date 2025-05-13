@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { memo, useEffect, useMemo, useState } from 'react';
 import { ChevronRight } from 'react-feather';
 import { Box, styled } from 'soroswap-ui';
 import Row, { RowBetween, RowFixed } from 'components/Row';
@@ -56,64 +56,117 @@ export const calculatePercentage = (parts: number, totalParts: number) => {
 
 function SwapPathComponent({ trade }: { trade: InterfaceTrade | undefined }) {
   const sorobanContext = useSorobanReact();
-  const { tokensAsMap, isLoading } = useAllTokens();
+  const { tokensAsMap, isLoading } = useAllTokens('frontend/src/components/Swap/SwapPathComponent.tsx');
+
+
+  const memoizedTradePath = useMemo(() => trade, [trade]);
+  console.log("🚀 ~ SwapPathComponent ~ memoizedTradePath:", trade)
+    
 
   const [pathArray, setPathArray] = useState<string[]>([]);
   const [distributionArray, setDistributionArray] = useState<distributionData[]>([]);
   const [totalParts, setTotalParts] = useState<number>(0);
   const [pathTokensIsLoading, setPathTokensIsLoading] = useState<boolean>(false);
 
+
+  const getTradedCurrencies = async (pathes: string[]) => {
+    const promises = pathes.map(async (contract) => {
+      const asset = await findToken(
+        contract,
+        tokensAsMap,
+        sorobanContext,
+        'SwapPathComponent.tsx&trade.platform == PlatformType.ROUTER',
+      );
+      const code = asset?.code == 'native' ? 'XLM' : asset?.code;
+
+      return code;
+    });
+    const results = await Promise.allSettled(promises);
+
+    return results
+      .filter((result) => result.status === 'fulfilled' && result.value)
+      .map((result) => (result.status === 'fulfilled' && result.value ? result.value : ''));
+  };
+
+  const getAggregatorPathCurrencyCodes = async (
+    path: string[],
+    tokensAsMap: any,
+    sorobanContext: any,
+  ) => {
+    const promises = path.map(async (contract) => {
+      const asset = await findToken(
+        contract,
+        tokensAsMap,
+        sorobanContext,
+        'SwapPathComponent.tsx&trade.platform == PlatformType.AGGREGATOR',
+      );
+      const code = asset?.code == 'native' ? 'XLM' : asset?.code;
+      return code;
+    });
+    const results = await Promise.allSettled(promises);
+    return results
+      .filter((result) => result.status === 'fulfilled' && result.value)
+      .map((result) => (result.status === 'fulfilled' && result.value ? result.value : ''));
+  };
+
   useEffect(() => {
     (async () => {
-      if (!trade || isLoading) return;
-      if (trade.platform == PlatformType.ROUTER && trade.path) {
-        setPathTokensIsLoading(true);
-        const promises = trade.path.map(async (contract) => {
-          const asset = await findToken(contract, tokensAsMap, sorobanContext);
-          const code = asset?.code == 'native' ? 'XLM' : asset?.code;
-          return code;
-        });
-        const results = await Promise.allSettled(promises);
+      if (!memoizedTradePath || isLoading) return;
+      console.log('!!!Change swap items', memoizedTradePath, isLoading, sorobanContext);
 
-        const fulfilledValues = results
-          .filter((result) => result.status === 'fulfilled' && result.value)
-          .map((result) => (result.status === 'fulfilled' && result.value ? result.value : ''));
-        setPathArray(fulfilledValues);
-        setPathTokensIsLoading(false);
-      } else if (trade.platform == PlatformType.STELLAR_CLASSIC && trade.path) {
+      if (memoizedTradePath.platform == PlatformType.ROUTER && memoizedTradePath.path) {
         setPathTokensIsLoading(true);
-        const codes = trade.path.map((address) => {
+
+        //TODO: memoizedTradePath.path.inputAmount && memoizedTradePath.path.output already have this - We don't need external request
+        let pathtokenNames = ['', ''];
+        if (
+          !memoizedTradePath.inputAmount ||
+          !memoizedTradePath.outputAmount ||
+          memoizedTradePath?.path[0] !== memoizedTradePath?.inputAmount?.currency?.contract ||
+          memoizedTradePath.path[1] !== memoizedTradePath?.outputAmount?.currency?.contract
+        ) {
+          console.log('GET FROM API');
+          pathtokenNames = await getTradedCurrencies(memoizedTradePath?.path);
+        } else {
+          console.log('GET FROM STATE');
+          pathtokenNames = [memoizedTradePath?.inputAmount?.currency?.code, memoizedTradePath.outputAmount?.currency?.code as string];
+        }
+    
+        setPathArray(pathtokenNames);
+        setPathTokensIsLoading(false);
+      } else if (memoizedTradePath.platform == PlatformType.STELLAR_CLASSIC && memoizedTradePath.path) {
+        setPathTokensIsLoading(true);
+        const codes = memoizedTradePath.path.map((address) => {
           if (address == 'native') return 'XLM';
           return address.split(':')[0];
         });
         setPathArray(codes);
         setPathTokensIsLoading(false);
-      } else if (trade.platform == PlatformType.AGGREGATOR) {
-        if (!trade?.distribution) return;
+      } else if (memoizedTradePath.platform == PlatformType.AGGREGATOR) {
+        if (!memoizedTradePath?.distribution) return;
+
         let tempDistributionArray: distributionData[] = [];
-        setPathTokensIsLoading(!pathTokensIsLoading);
-        for (let distribution of trade?.distribution) {
-          const promises = distribution.path.map(async (contract) => {
-            const asset = await findToken(contract, tokensAsMap, sorobanContext);
-            const code = asset?.code == 'native' ? 'XLM' : asset?.code;
-            return code;
-          });
-          const results = await Promise.allSettled(promises);
-          const fulfilledValues = results
-            .filter((result) => result.status === 'fulfilled' && result.value)
-            .map((result) => (result.status === 'fulfilled' && result.value ? result.value : ''));
+        setPathTokensIsLoading(true); // Set loading to true at the start of processing aggregator paths
+
+        for (let distribution of memoizedTradePath?.distribution) {
+          const fulfilledValues = await getAggregatorPathCurrencyCodes(
+            distribution.path,
+            tokensAsMap,
+            sorobanContext,
+          );
+
           tempDistributionArray.push({
             path: fulfilledValues,
             parts: distribution.parts,
             protocol: distribution.protocol_id,
           });
-          setDistributionArray(tempDistributionArray);
-          setTotalParts(tempDistributionArray.reduce((acc, curr) => acc + curr.parts, 0));
         }
+        setDistributionArray(tempDistributionArray);
+        setTotalParts(tempDistributionArray.reduce((acc, curr) => acc + curr.parts, 0));
         setPathTokensIsLoading(false);
       }
     })();
-  }, [trade?.path, isLoading, sorobanContext]);
+  }, [trade, isLoading, sorobanContext]);
 
   return (
     <RowBetween sx={{ alignItems: 'start' }}>
@@ -124,15 +177,15 @@ function SwapPathComponent({ trade }: { trade: InterfaceTrade | undefined }) {
                 `}
         >
           <BodySmall color="textSecondary">
-            {trade?.platform == PlatformType.AGGREGATOR && distributionArray.length > 1
+            {memoizedTradePath?.platform == PlatformType.AGGREGATOR && distributionArray.length > 1
               ? 'Paths:'
               : 'Path'}
           </BodySmall>
         </MouseoverTooltip>
       </RowFixed>
 
-      {(trade?.platform == PlatformType.ROUTER ||
-        trade?.platform == PlatformType.STELLAR_CLASSIC) && (
+      {(memoizedTradePath?.platform == PlatformType.ROUTER ||
+        memoizedTradePath?.platform == PlatformType.STELLAR_CLASSIC) && (
         <PathLoadingPlaceholder syncing={pathTokensIsLoading} width={100}>
           <PathBox data-testid="swap__details__path">
             {pathArray?.map((contract, index) => (
@@ -144,7 +197,7 @@ function SwapPathComponent({ trade }: { trade: InterfaceTrade | undefined }) {
           </PathBox>
         </PathLoadingPlaceholder>
       )}
-      {trade?.platform == PlatformType.AGGREGATOR && (
+      {memoizedTradePath?.platform == PlatformType.AGGREGATOR && (
         <PathLoadingPlaceholder syncing={pathTokensIsLoading} width={200}>
           <AggregatorPathBox data-testid="swap__details__path">
             {distributionArray.map((distribution, index) => (
@@ -174,4 +227,4 @@ function SwapPathComponent({ trade }: { trade: InterfaceTrade | undefined }) {
   );
 }
 
-export default SwapPathComponent;
+export default memo(SwapPathComponent);

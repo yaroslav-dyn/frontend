@@ -55,6 +55,7 @@ export const addUserToken = (token: TokenType, sorobanContext: SorobanContextTyp
 export async function getToken(
   sorobanContext: SorobanContextType,
   tokenAddress?: string | undefined,
+  from?: string
 ): Promise<TokenType | undefined> {
   if (!tokenAddress || tokenAddress === '' || !sorobanContext.activeNetwork) return undefined;
 
@@ -63,10 +64,10 @@ export async function getToken(
   try {
     const formattedAddress = isAddress(tokenAddress);
     if (!formattedAddress) return;
-    name = await getTokenName(formattedAddress, sorobanContext);
-    symbol = await getTokenSymbol(formattedAddress, sorobanContext);
-    decimals = await getTokenDecimals(formattedAddress, sorobanContext);
-    logo = await getTokenLogo(formattedAddress, sorobanContext);
+    name = await getTokenName(formattedAddress, sorobanContext, from + '*/*' + 'getToken');
+    symbol = await getTokenSymbol(formattedAddress, sorobanContext, from + '*/*' + 'getToken');
+    decimals = await getTokenDecimals(formattedAddress, sorobanContext, from + '*/*' + 'getToken');
+    logo = await getTokenLogo(formattedAddress, sorobanContext, from + '*/*' + 'getToken');
 
     const token: TokenType = {
       contract: formattedAddress,
@@ -82,12 +83,13 @@ export async function getToken(
   }
 }
 
-export const getTokenLogo = async (address: string, sorobanContext: SorobanContextType) => {
+export const getTokenLogo = async (address: string, sorobanContext: SorobanContextType, from?: string) => {
   const backendURL = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/tokens`;
 
   // fetch token list from url
   try {
     const response = await fetch(backendURL);
+    console.log("🚀 ~ getTokenLogo ", from)
     if (!response.ok) {
       return undefined;
     }
